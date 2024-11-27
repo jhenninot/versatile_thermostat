@@ -245,6 +245,7 @@ class BaseThermostat(ClimateEntity, RestoreEntity, Generic[T]):
         self._presets_away: dict[str, Any] = {}  # presets_away
 
         self._attr_preset_modes: list[str] = []
+        self._choosen_preset = None
 
         self._use_central_config_temperature = False
 
@@ -1283,7 +1284,7 @@ class BaseThermostat(ClimateEntity, RestoreEntity, Generic[T]):
             )
 
             return
-
+        self._choosen_preset = preset_mode
         await self._async_set_preset_mode_internal(
             preset_mode, force=False, overwrite_saved_preset=overwrite_saved_preset
         )
@@ -1442,7 +1443,11 @@ class BaseThermostat(ClimateEntity, RestoreEntity, Generic[T]):
         if temperature is None:
             return
         await self._async_internal_set_temperature(temperature)
-        self._attr_preset_mode = PRESET_NONE
+        if not self._choosen_preset is None:
+                self._attr_preset_mode = self._choosen_preset
+                self._choosen_preset = None
+        else:
+            self._attr_preset_mode = PRESET_NONE
         self.recalculate()
         self.reset_last_change_time()
         await self.async_control_heating(force=True)
